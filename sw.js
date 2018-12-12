@@ -42,16 +42,18 @@ self.addEventListener("activate", e => {
 //   );
 // });
 
-self.addEventListener('fetch', e => {
+self.addEventListener("fetch", e => {
   e.respondWith(
     caches.open(cacheName).then(cache => {
-     return cache.match(e.request).then(response => {
-      return response || fetch(e.request)
-      .then(response => {
-        const responseClone = response.clone();
-        cache.put(e.request, responseClone);
-        })
-      })
-    }
- );
+      return cache.match(e.request).then(response => {
+        return (
+          response ||
+          fetch(e.request).then(response => {
+            const responseClone = response.clone();
+            cache.put(e.request, responseClone);
+          })
+        );
+      });
+    })
+  );
 });
