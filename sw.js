@@ -1,40 +1,51 @@
-const cacheName = "v2";
+const VERSION = "v2";
 
-// Call Install Event
-self.addEventListener("install", e => {
-  console.log("Service Worker: Installed");
-});
+self.addEventListener("install", event =>
+  event.waitUntil(installServiceWorker())
+);
 
-// Call Activate Event
-self.addEventListener("activate", e => {
-  console.log("Service Worker: Activated");
-  // Remove unwanted caches
-  e.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cache => {
-          if (cache !== cacheName) {
-            console.log("Service Worker: Clearing Old Cache");
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
-});
+async function installServiceWorker() {
+  log("Service Worker installation started ");
+  const cache = await caches.open(getCacheName());
+  return cache.addAll(["/"]);
+}
 
-self.addEventListener("fetch", e => {
-  e.respondWith(
-    caches.open(cacheName).then(cache => {
-      return cache.match(e.request).then(response => {
-        return (
-          response ||
-          fetch(e.request).then(response => {
-            const responseClone = response.clone();
-            cache.put(e.request, responseClone);
-          })
-        );
-      });
-    })
-  );
-});
+self.addEventListener("activate", () => activateSW());
+
+async function activateSW() {
+  log("Service Worker activated");
+  const cacheKeys = await caches.keys();
+  cacheKeys.forEach(cacheKey => {
+    if (cacheKey !== getCacheName()) {
+      caches.delete(cacheKey);
+    }
+  });
+}
+
+self.addEventListener("fetch", event =>
+  event.respondWith(cacheThenNetwork(event))
+);
+
+async function cacheThenNetwork(event) {
+  const cache = await caches.open(getCacheName());
+  const cachedResponse = await cache.match(event.request);
+  if (cachedResponse) {
+    log("Serving From Cache: " + event.request.url);
+    return cachedResponse;
+  }
+  const networkResponse = await fetch(event.request);
+  log("Calling network: " + event.request.url);
+  return networkResponse;
+}
+
+function getCacheName() {
+  return "app-cache-" + VERSION;
+}
+
+function log(message, ...data) {
+  if (data.length > 0) {
+    console.log(VERSION, message, data);
+  } else {
+    console.log(VERSION, message);
+  }
+}
