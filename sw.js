@@ -7,7 +7,19 @@ self.addEventListener("install", event =>
 async function installServiceWorker() {
   log("Service Worker installation started ");
   const cache = await caches.open(getCacheName());
-  return cache.addAll(["/"]);
+  return cache.addAll([
+    "/",
+    "/index.html",
+    "/about.html",
+    "/css/style.css",
+    "/images/icons/icon-32.png",
+    "/images/icons/icon-64.png",
+    "/images/icons/icon-128.png",
+    "/images/icons/icon-256.png",
+    "/images/icons/icon-512.png",
+    "/js/main.js",
+    "/manifest.json"
+  ]);
 }
 
 self.addEventListener("activate", () => activateSW());
